@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/TransactionModel.dart';
+import '../utilities/helper_list.dart';
 
 class TransactionsScreenView extends StatefulWidget {
   const TransactionsScreenView({super.key});
@@ -13,149 +14,6 @@ class TransactionsScreenView extends StatefulWidget {
 
 class _TransactionsScreenViewState extends State<TransactionsScreenView> {
   String selectedCategory = "All";
-
-  List<TransactionModel> transactionDataList = [
-    TransactionModel(
-      transactionId: 'TXN001',
-      transactionName: 'Salary',
-      transactionAmount: 50000.00,
-      transactionDate: DateTime(2025, 1, 1),
-      transactionType: 'income',
-    ),
-    TransactionModel(
-      transactionId: 'TXN002',
-      transactionName: 'Grocery Shopping',
-      transactionAmount: 2500.50,
-      transactionDate: DateTime(2025, 1, 5),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN003',
-      transactionName: 'Electricity Bill',
-      transactionAmount: 1800.00,
-      transactionDate: DateTime(2025, 1, 10),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN004',
-      transactionName: 'Internet Bill',
-      transactionAmount: 1200.00,
-      transactionDate: DateTime(2025, 1, 12),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN001',
-      transactionName: 'Salary',
-      transactionAmount: 50000.00,
-      transactionDate: DateTime(2025, 1, 1),
-      transactionType: 'income',
-    ),
-    TransactionModel(
-      transactionId: 'TXN002',
-      transactionName: 'Grocery Shopping',
-      transactionAmount: 2500.50,
-      transactionDate: DateTime(2025, 1, 5),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN003',
-      transactionName: 'Electricity Bill',
-      transactionAmount: 1800.00,
-      transactionDate: DateTime(2025, 1, 10),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN004',
-      transactionName: 'Internet Bill',
-      transactionAmount: 1200.00,
-      transactionDate: DateTime(2025, 1, 12),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN001',
-      transactionName: 'Salary',
-      transactionAmount: 50000.00,
-      transactionDate: DateTime(2025, 1, 1),
-      transactionType: 'income',
-    ),
-    TransactionModel(
-      transactionId: 'TXN002',
-      transactionName: 'Grocery Shopping',
-      transactionAmount: 2500.50,
-      transactionDate: DateTime(2025, 1, 5),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN003',
-      transactionName: 'Electricity Bill',
-      transactionAmount: 1800.00,
-      transactionDate: DateTime(2025, 1, 10),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN004',
-      transactionName: 'Internet Bill',
-      transactionAmount: 1200.00,
-      transactionDate: DateTime(2025, 1, 12),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN001',
-      transactionName: 'Salary',
-      transactionAmount: 50000.00,
-      transactionDate: DateTime(2025, 1, 1),
-      transactionType: 'income',
-    ),
-    TransactionModel(
-      transactionId: 'TXN002',
-      transactionName: 'Grocery Shopping',
-      transactionAmount: 2500.50,
-      transactionDate: DateTime(2025, 1, 5),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN003',
-      transactionName: 'Electricity Bill',
-      transactionAmount: 1800.00,
-      transactionDate: DateTime(2025, 1, 10),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN004',
-      transactionName: 'Internet Bill',
-      transactionAmount: 1200.00,
-      transactionDate: DateTime(2025, 1, 12),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN001',
-      transactionName: 'Salary',
-      transactionAmount: 50000.00,
-      transactionDate: DateTime(2025, 1, 1),
-      transactionType: 'income',
-    ),
-    TransactionModel(
-      transactionId: 'TXN002',
-      transactionName: 'Grocery Shopping',
-      transactionAmount: 2500.50,
-      transactionDate: DateTime(2025, 1, 5),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN003',
-      transactionName: 'Electricity Bill',
-      transactionAmount: 1800.00,
-      transactionDate: DateTime(2025, 1, 10),
-      transactionType: 'expense',
-    ),
-    TransactionModel(
-      transactionId: 'TXN004',
-      transactionName: 'Internet Bill',
-      transactionAmount: 1200.00,
-      transactionDate: DateTime(2025, 1, 12),
-      transactionType: 'expense',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +147,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
     bool _isIncome,
   ) {
     return Card(
+      color: Colors.white,
       elevation: 0,
       margin: EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
@@ -328,7 +187,17 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
               ),
             ),
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                showAlertDialog(
+                  context,
+                  "Deleted",
+                  "Are you sure, want to delete transaction data?",
+                  "Cancel",
+                  "Delete",
+                  Colors.green,
+                  Colors.red,
+                );
+              },
               icon: SvgPicture.asset(
                 "images/delete_icon.svg",
                 width: 22,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utilities/helper_function.dart';
+
 class SettingScreenView extends StatefulWidget {
   const SettingScreenView({super.key});
 
@@ -158,7 +160,9 @@ class _SettingScreenViewState extends State<SettingScreenView> {
     return ListTile(
       title: Text(title, style: TextStyle(fontWeight: FontWeight.bold),),
       subtitle: Text(subtitle),
-      trailing: TextButton(onPressed: (){}, child: Text(actionText, style: TextStyle(color: Colors.green),)),
+      trailing: TextButton(onPressed: (){
+        showTextInputDialog(context, "Edit", "Enter you text", "Cancel", "Save", Colors.red, Colors.green);
+      }, child: Text(actionText, style: TextStyle(color: Colors.green),)),
       onTap: () {
         // handle action
       },
