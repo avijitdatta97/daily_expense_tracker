@@ -1,9 +1,8 @@
 import 'package:dec/utilities/helper_function.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
-import '../models/TransactionModel.dart';
 import '../utilities/helper_list.dart';
+import 'HelperViews/TransactionForm.dart';
 
 class TransactionsScreenView extends StatefulWidget {
   const TransactionsScreenView({super.key});
@@ -34,7 +33,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
             ),
             ElevatedButton(
               onPressed: () {
-                showSnackBar(context, "title", "action");
+                _showBottomSheet(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -61,6 +60,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
         padding: const EdgeInsets.symmetric(horizontal: 12.0),
         child: Column(
           children: [
+
             /// Category Button
             Padding(
               padding: const EdgeInsets.only(top: 10),
@@ -121,10 +121,11 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
                 itemBuilder: (cotext, index) {
                   final String transactionDate =
                       "${transactionDataList[index].transactionDate.day}/" +
-                      "${transactionDataList[index].transactionDate.month}/" +
-                      "${transactionDataList[index].transactionDate.year}";
+                          "${transactionDataList[index].transactionDate
+                              .month}/" +
+                          "${transactionDataList[index].transactionDate.year}";
                   final bool _isIncome =
-                      transactionDataList[index].transactionType == 'income'
+                  transactionDataList[index].transactionType == 'income'
                       ? true
                       : false;
                   return _buildTransactionCard(
@@ -141,11 +142,9 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
     );
   }
 
-  Widget _buildTransactionCard(
-    int index,
-    String transactionDate,
-    bool _isIncome,
-  ) {
+  Widget _buildTransactionCard(int index,
+      String transactionDate,
+      bool _isIncome,) {
     return Card(
       color: Colors.white,
       elevation: 0,
@@ -164,22 +163,23 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
               : Colors.red.shade100,
           child: _isIncome
               ? Icon(
-                  Icons.call_received,
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                )
+            Icons.call_received,
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+          )
               : Icon(
-                  Icons.call_made,
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
+            Icons.call_made,
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: 14,
           children: [
             Text(
-              "${_isIncome ? '+' : '-'}\$${transactionDataList[index].transactionAmount.toStringAsFixed(2)}",
+              "${_isIncome ? '+' : '-'}\$${transactionDataList[index]
+                  .transactionAmount.toStringAsFixed(2)}",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -235,6 +235,74 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
         setState(() {
           selectedCategory = label;
         });
+      },
+    );
+  }
+
+  void _showBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery
+                .of(context)
+                .viewInsets
+                .bottom,
+          ),
+          child: DefaultTabController(
+            length: 2,
+            child: Container(
+              padding: EdgeInsets.all(16),
+              height: 450,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /// Title
+                  Center(
+                    child: Text(
+                      "Enter Your Transaction",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: 10),
+
+                  /// Tabs
+                  TabBar(
+                    indicatorColor: Colors.green,
+                    indicatorWeight: 3,
+                    labelColor: Colors.green,
+                    unselectedLabelColor: Colors.grey,
+                    tabs: [
+                      Tab(text: "Income"),
+                      Tab(text: "Expense"),
+                    ],
+                  ),
+
+                  SizedBox(height: 10),
+
+                  /// Tab Content
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        TransactionForm(type: "Income"),
+                        TransactionForm(type: "Expense"),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
       },
     );
   }
