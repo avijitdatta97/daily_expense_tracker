@@ -3,6 +3,7 @@ import 'package:dec/Views/TopNavbarScreens/DashboardScreenView.dart';
 import 'package:dec/Views/TopNavbarScreens/InvestmentsScreenView.dart';
 import 'package:flutter/material.dart';
 
+import '../utilities/helper_function.dart';
 import 'HelperViews/TabItem.dart';
 
 class HomeScreenView extends StatefulWidget {
@@ -25,7 +26,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Hello Bangladesh"),
-                  Text("Good Morning", style: TextStyle(fontSize: 14, color: Colors.grey),)
+                  Text(getGreeting(), style: TextStyle(fontSize: 14, color: Colors.grey),)
                 ],
               ),
               IconButton(onPressed: (){}, icon: Icon(Icons.account_circle, size: 40,))

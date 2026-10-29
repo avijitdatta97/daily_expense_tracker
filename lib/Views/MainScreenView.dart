@@ -1,5 +1,4 @@
 import 'package:dec/Views/HomeScreenView.dart';
-import 'package:dec/Views/ProfileScreenView.dart';
 import 'package:dec/Views/SettingScreenView.dart';
 import 'package:dec/Views/TransactionsScreenView.dart';
 import 'package:flutter/material.dart';

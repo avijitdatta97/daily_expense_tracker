@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../utilities/helper_function.dart';
 
 class SettingScreenView extends StatefulWidget {

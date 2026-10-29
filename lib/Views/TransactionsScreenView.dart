@@ -26,7 +26,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
               children: [
                 Text("Transactions"),
                 Text(
-                  "Manage your detailed financial records",
+                  "Manage financial records",
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
@@ -60,7 +60,6 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
         padding: const EdgeInsets.symmetric(horizontal: 12.0),
         child: Column(
           children: [
-
             /// Category Button
             Padding(
               padding: const EdgeInsets.only(top: 10),
@@ -116,22 +115,34 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
 
             /// List View
             Expanded(
-              child: ListView.builder(
-                itemCount: transactionDataList.length,
-                itemBuilder: (cotext, index) {
-                  final String transactionDate =
-                      "${transactionDataList[index].transactionDate.day}/" +
-                          "${transactionDataList[index].transactionDate
-                              .month}/" +
-                          "${transactionDataList[index].transactionDate.year}";
-                  final bool _isIncome =
-                  transactionDataList[index].transactionType == 'income'
-                      ? true
-                      : false;
-                  return _buildTransactionCard(
-                    index,
-                    transactionDate,
-                    _isIncome,
+              child: Builder(
+                builder: (context) {
+                  final filteredTransactions = selectedCategory == "All"
+                      ? transactionDataList
+                      : transactionDataList.where((transaction) {
+                          return transaction.transactionType.toLowerCase() ==
+                              selectedCategory.toLowerCase();
+                        }).toList();
+
+                  return ListView.builder(
+                    itemCount: filteredTransactions.length,
+                    itemBuilder: (context, index) {
+                      final transaction = filteredTransactions[index];
+
+                      final String transactionDate =
+                          "${transaction.transactionDate.day}/"
+                          "${transaction.transactionDate.month}/"
+                          "${transaction.transactionDate.year}";
+
+                      final bool isIncome =
+                          transaction.transactionType.toLowerCase() == 'income';
+
+                      return _buildTransactionCard(
+                        transaction,
+                        transactionDate,
+                        isIncome,
+                      );
+                    },
                   );
                 },
               ),
@@ -142,50 +153,56 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
     );
   }
 
-  Widget _buildTransactionCard(int index,
+  Widget _buildTransactionCard(
+      dynamic transaction,
       String transactionDate,
-      bool _isIncome,) {
+      bool isIncome,
+      ) {
     return Card(
       color: Colors.white,
       elevation: 0,
-      margin: EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade300, width: 1),
+        side: BorderSide(
+          color: Colors.grey.shade300,
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
-
       child: ListTile(
-        title: Text(transactionDataList[index].transactionName),
+        title: Text(transaction.transactionName),
         subtitle: Text(transactionDate),
+
         leading: CircleAvatar(
-          backgroundColor: _isIncome
+          backgroundColor: isIncome
               ? Colors.green.shade100
               : Colors.red.shade100,
-          child: _isIncome
-              ? Icon(
+          child: isIncome
+              ? const Icon(
             Icons.call_received,
             color: Colors.green,
-            fontWeight: FontWeight.bold,
           )
-              : Icon(
+              : const Icon(
             Icons.call_made,
             color: Colors.red,
-            fontWeight: FontWeight.bold,
           ),
         ),
+
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
-          spacing: 14,
           children: [
             Text(
-              "${_isIncome ? '+' : '-'}\$${transactionDataList[index]
-                  .transactionAmount.toStringAsFixed(2)}",
+              "${isIncome ? '+' : '-'}\$"
+                  "${transaction.transactionAmount.toStringAsFixed(2)}",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: _isIncome ? Colors.green : Colors.red,
+                color: isIncome ? Colors.green : Colors.red,
               ),
             ),
+
+            const SizedBox(width: 14),
+
             IconButton(
               onPressed: () {
                 showAlertDialog(
@@ -249,10 +266,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery
-                .of(context)
-                .viewInsets
-                .bottom,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: DefaultTabController(
             length: 2,
