@@ -5,6 +5,6 @@ class DbHelper{
 
 
   // static Future<bool> isUser(String uid) async {
-  //   final snapshot = await _db.collection();
+  // final snapshot = await _db.collection();
   // }
 }
