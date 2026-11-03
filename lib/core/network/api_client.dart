@@ -11,7 +11,7 @@ class ApiClient {
   // Use http://10.0.2.2:8080/api/v1/ for Android Emulator
   // Use http://localhost:8080/api/v1/ for iOS Simulator / Web
   // Use your local network IP (e.g., http://192.168.x.x:8080/api/v1/) for physical device
-  static const String baseUrl = 'http://10.0.2.2:8080/api/v1/';
+  static const String baseUrl = 'http://192.168.0.200:8080/api/v1/';
 
   ApiClient(this._storageService) {
     _dio = Dio(
