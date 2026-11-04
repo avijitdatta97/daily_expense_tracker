@@ -1,10 +1,11 @@
 import 'package:dec/Views/AuthScreens/LoginScreenView.dart';
+import 'package:dec/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../MainScreenView.dart';
 
 class SignupScreenView extends StatefulWidget {
-
   static const String routeName = '/signupPage';
   const SignupScreenView({super.key});
 
@@ -13,29 +14,48 @@ class SignupScreenView extends StatefulWidget {
 }
 
 class _SignupScreenViewState extends State<SignupScreenView> {
-
   bool _isObscure1 = true;
   bool _isObscure2 = true;
 
+  final TextEditingController _emailTextController = TextEditingController();
+  final TextEditingController _nameTextController = TextEditingController();
+  final TextEditingController _phoneTextController = TextEditingController();
+  final TextEditingController _passwordTextController = TextEditingController();
+  final TextEditingController _confirmPasswordTextController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _emailTextController.dispose();
+    _nameTextController.dispose();
+    _phoneTextController.dispose();
+    _passwordTextController.dispose();
+    _confirmPasswordTextController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    var _outlineInputBorder = OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0), // Radius 10
-                        borderSide: BorderSide(
-                          color: Color(0xFFD8DADC),
-                        ), // Color #D8DADC
-                      );
+    final authProvider = context.watch<AuthProvider>();
+
+    final outlineInputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10.0), // Radius 10
+      borderSide: const BorderSide(
+        color: Color(0xFFD8DADC),
+      ), // Color #D8DADC
+    );
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20.0),
                   child: Text(
                     "Sign up",
                     style: TextStyle(
@@ -47,100 +67,146 @@ class _SignupScreenViewState extends State<SignupScreenView> {
                 ),
 
                 Form(
+                  key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Form(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInputLabelText("Email Address"),
-                          TextFormField(
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              hintText: "Your email",
-                              hintStyle: TextStyle(color: Colors.grey),
-                              // Standard Border (Fallback)
-                              border: _outlineInputBorder,
-                              // Enabled Border (State when field is not focused)
-                              enabledBorder: _outlineInputBorder,
-                              // Focused Border (State when typing - keeping radius consistent)
-                              focusedBorder: _outlineInputBorder,
-                            ),
-                          ),
+                      _buildInputLabelText("Email Address"),
+                      TextFormField(
+                        controller: _emailTextController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          hintText: "Your email",
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          border: outlineInputBorder,
+                          enabledBorder: outlineInputBorder,
+                          focusedBorder: outlineInputBorder,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty || !value.contains('@')) {
+                            return "Please enter a valid email address";
+                          }
+                          return null;
+                        },
+                      ),
 
-                          _buildInputLabelText("Name"),
-                          TextFormField(
-                            keyboardType: TextInputType.text,
-                            decoration: InputDecoration(
-                              hintText: "Your name",
-                              hintStyle: TextStyle(color: Colors.grey),
-                              border: _outlineInputBorder,
-                              enabledBorder: _outlineInputBorder,
-                              focusedBorder: _outlineInputBorder,
-                            ),
-                          ),
+                      _buildInputLabelText("Name"),
+                      TextFormField(
+                        controller: _nameTextController,
+                        keyboardType: TextInputType.text,
+                        decoration: InputDecoration(
+                          hintText: "Your name",
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          border: outlineInputBorder,
+                          enabledBorder: outlineInputBorder,
+                          focusedBorder: outlineInputBorder,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter your name";
+                          }
+                          return null;
+                        },
+                      ),
 
-                          _buildInputLabelText("Create a Password"),
-                          TextFormField(
-                            keyboardType: TextInputType.emailAddress,
-                            obscureText: _isObscure1,
-                            decoration: InputDecoration(
-                              hintText: "Password",
-                              hintStyle: TextStyle(color: Colors.grey),
-                              suffixIcon: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _isObscure1 = !_isObscure1;
-                                  });
-                                },
-                                child: _showPasswordText(_isObscure1),
-                              ),
-                              // Standard Border (Fallback)
-                              border: _outlineInputBorder,
-                              // Enabled Border (State when field is not focused)
-                              enabledBorder: _outlineInputBorder,
-                              // Focused Border (State when typing - keeping radius consistent)
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0), // Radius 10
-                                borderSide: BorderSide(
-                                  color: Color(0xFFD8DADC),
-                                  width: 2,
-                                ),
-                              ),
+                      _buildInputLabelText("Phone Number"),
+                      TextFormField(
+                        controller: _phoneTextController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: "Phone Number",
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          border: outlineInputBorder,
+                          enabledBorder: outlineInputBorder,
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFD8DADC),
+                              width: 2,
                             ),
                           ),
+                        ),
+                        validator: (value) {
+                          if (value != null && value.isNotEmpty && value.trim().length < 11) {
+                            return "Phone number must be at least 11 characters long";
+                          }
+                          return null;
+                        },
+                      ),
 
-                          _buildInputLabelText("Confirm Password"),
-                          TextFormField(
-                            keyboardType: TextInputType.emailAddress,
-                            obscureText: _isObscure2,
-                            decoration: InputDecoration(
-                              hintText: "Password",
-                              hintStyle: TextStyle(color: Colors.grey),
-                              suffixIcon: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _isObscure2 = !_isObscure2;
-                                  });
-                                },
-                                child: _showPasswordText(_isObscure2),
-                              ),
-                              // Standard Border (Fallback)
-                              border: _outlineInputBorder,
-                              // Enabled Border (State when field is not focused)
-                              enabledBorder: _outlineInputBorder,
-                              // Focused Border (State when typing - keeping radius consistent)
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0), // Radius 10
-                                borderSide: BorderSide(
-                                  color: Color(0xFFD8DADC),
-                                  width: 2,
-                                ),
-                              ),
+                      _buildInputLabelText("Create a Password"),
+                      TextFormField(
+                        controller: _passwordTextController,
+                        keyboardType: TextInputType.text,
+                        obscureText: _isObscure1,
+                        decoration: InputDecoration(
+                          hintText: "Password",
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          suffixIcon: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isObscure1 = !_isObscure1;
+                              });
+                            },
+                            child: _showPasswordText(_isObscure1),
+                          ),
+                          border: outlineInputBorder,
+                          enabledBorder: outlineInputBorder,
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFD8DADC),
+                              width: 2,
                             ),
                           ),
-                        ],
-                      )),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter password";
+                          }
+                          if (value.length < 6) {
+                            return "Password must be at least 6 characters long";
+                          }
+                          return null;
+                        },
+                      ),
+
+                      _buildInputLabelText("Confirm Password"),
+                      TextFormField(
+                        controller: _confirmPasswordTextController,
+                        keyboardType: TextInputType.text,
+                        obscureText: _isObscure2,
+                        decoration: InputDecoration(
+                          hintText: "Password",
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          suffixIcon: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isObscure2 = !_isObscure2;
+                              });
+                            },
+                            child: _showPasswordText(_isObscure2),
+                          ),
+                          border: outlineInputBorder,
+                          enabledBorder: outlineInputBorder,
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFD8DADC),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Please confirm your password";
+                          }
+                          if (value != _passwordTextController.text) {
+                            return "Passwords do not match";
+                          }
+                          return null;
+                        },
+                      ),
 
                       // Signup Button
                       Row(
@@ -149,23 +215,57 @@ class _SignupScreenViewState extends State<SignupScreenView> {
                             child: Padding(
                               padding: const EdgeInsets.only(top: 30.0),
                               child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    MainScreenView.routeName,
-                                  );
-                                },
+                                onPressed: authProvider.isLoading
+                                    ? null
+                                    : () async {
+                                        if (_formKey.currentState!.validate()) {
+                                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                                          final navigator = Navigator.of(context);
+
+                                          final phoneText = _phoneTextController.text.trim();
+                                          final success = await authProvider.signup(
+                                            name: _nameTextController.text.trim(),
+                                            email: _emailTextController.text.trim(),
+                                            phone: phoneText.isEmpty ? null : phoneText,
+                                            password: _passwordTextController.text,
+                                          );
+
+                                          if (!mounted) return;
+
+                                          if (success) {
+                                            navigator.pushReplacementNamed(
+                                              MainScreenView.routeName,
+                                            );
+                                          } else {
+                                            scaffoldMessenger.showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  authProvider.errorMessage ??
+                                                      'Signup failed',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green, // Background color
-                                  foregroundColor: Colors.white, // Text color
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      10,
-                                    ), // Corner radius
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                 ),
-                                child: Text("Sign in"),
+                                child: authProvider.isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text("Sign up"),
                               ),
                             ),
                           ),
@@ -180,10 +280,13 @@ class _SignupScreenViewState extends State<SignupScreenView> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Already have an account?"),
-                      TextButton(onPressed: () {
-                        Navigator.pushNamed(context, LogInScreenView.routeName);
-                      }, child: Text("Log in")),
+                      const Text("Already have an account?"),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, LogInScreenView.routeName);
+                        },
+                        child: const Text("Log in"),
+                      ),
                     ],
                   ),
                 ),
@@ -197,20 +300,19 @@ class _SignupScreenViewState extends State<SignupScreenView> {
 
   Padding _buildInputLabelText(String labelName) {
     return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  child: Text(
-                    labelName,
-                    style: TextStyle(fontSize: 14, color: Colors.black),
-                  ),
-                );
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Text(
+        labelName,
+        style: const TextStyle(fontSize: 14, color: Colors.black),
+      ),
+    );
   }
 
   Icon _showPasswordText(bool obscureValue) {
     if (obscureValue) {
-      return Icon(Icons.visibility_off);
+      return const Icon(Icons.visibility_off);
     } else {
-      return Icon(Icons.visibility);
+      return const Icon(Icons.visibility);
     }
   }
-
 }
