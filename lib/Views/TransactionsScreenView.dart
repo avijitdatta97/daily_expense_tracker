@@ -271,8 +271,8 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
           child: DefaultTabController(
             length: 2,
             child: Container(
-              padding: EdgeInsets.all(16),
-              height: 450,
+              padding: const EdgeInsets.all(16),
+              height: MediaQuery.of(context).size.height * 0.85,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -287,7 +287,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
                     ),
                   ),
 
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
                   /// Tabs
                   TabBar(
@@ -301,7 +301,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
                     ],
                   ),
 
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
                   /// Tab Content
                   Expanded(
