@@ -127,7 +127,10 @@ class _SignupScreenViewState extends State<SignupScreenView> {
                           ),
                         ),
                         validator: (value) {
-                          if (value != null && value.isNotEmpty && value.trim().length < 11) {
+                          if (value == null || value.isEmpty) {
+                            return "Please enter password";
+                          }
+                          if (value.trim().length == 11) {
                             return "Phone number must be at least 11 characters long";
                           }
                           return null;
@@ -233,8 +236,9 @@ class _SignupScreenViewState extends State<SignupScreenView> {
                                           if (!mounted) return;
 
                                           if (success) {
-                                            navigator.pushReplacementNamed(
+                                            navigator.pushNamedAndRemoveUntil(
                                               MainScreenView.routeName,
+                                              (route) => false,
                                             );
                                           } else {
                                             scaffoldMessenger.showSnackBar(
