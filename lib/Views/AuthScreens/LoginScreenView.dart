@@ -182,19 +182,23 @@ class _LogInScreenViewState extends State<LogInScreenView> {
                             ? null
                             : () async {
                                 if (_formKey.currentState!.validate()) {
+                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                                  final navigator = Navigator.of(context);
+
                                   final success = await authProvider.login(
                                     _emailTextEditorController.text.trim(),
                                     _passwordTextEditorController.text,
                                   );
 
-                                  if (success && mounted) {
-                                    Navigator.pushReplacementNamed(
-                                      context,
+                                  if (!mounted) return;
+
+                                  if (success) {
+                                    navigator.pushNamedAndRemoveUntil(
                                       MainScreenView.routeName,
+                                      (route) => false,
                                     );
-                                  } else if (mounted) {
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(
+                                  } else {
+                                    scaffoldMessenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
                                           authProvider.errorMessage ??

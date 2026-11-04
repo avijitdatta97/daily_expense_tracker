@@ -8,9 +8,16 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _storageService.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
+    final isPublicEndpoint = options.path.contains('auth/login') ||
+        options.path.contains('auth/signup') ||
+        options.path.contains('auth/forgot-password') ||
+        options.path.contains('auth/reset-password');
+
+    if (!isPublicEndpoint) {
+      final token = await _storageService.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
     }
     options.headers['Content-Type'] = 'application/json';
     options.headers['Accept'] = 'application/json';
