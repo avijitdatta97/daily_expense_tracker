@@ -1,4 +1,8 @@
+import 'package:dec/models/account_type.dart';
+import 'package:dec/models/category_model.dart';
+import 'package:dec/providers/category_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class TransactionForm extends StatefulWidget {
   final String type;
@@ -12,58 +16,26 @@ class TransactionForm extends StatefulWidget {
 class _TransactionFormState extends State<TransactionForm> {
   final _formKey = GlobalKey<FormState>();
 
-  String? _selectedCategory;
-  String? _selectedSubCategory;
-  String? _selectedAccountType;
+  CategoryModel? _selectedCategory;
+  SubcategoryModel? _selectedSubCategory;
+  AccountType? _selectedAccountType;
 
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
-  final Map<String, List<String>> _incomeCategoriesWithSub = {
-    'Salary': ['Monthly Salary', 'Bonus', 'Overtime'],
-    'Business': ['Sales', 'Services', 'Profit'],
-    'Investment': ['Dividends', 'Interest', 'Stocks'],
-    'Freelance': ['Project', 'Consulting'],
-    'Other Income': ['Gift', 'Refund', 'Miscellaneous'],
-  };
-
-  final Map<String, List<String>> _expenseCategoriesWithSub = {
-    'Food & Dining': ['Groceries', 'Restaurants', 'Fast Food', 'Coffee'],
-    'Bills & Utilities': ['Electricity', 'Water', 'Internet', 'Rent'],
-    'Shopping': ['Clothing', 'Electronics', 'Home Items'],
-    'Transportation': ['Fuel', 'Public Transit', 'Taxi/Uber'],
-    'Entertainment': ['Movies', 'Games', 'Subscriptions'],
-    'Health & Medical': ['Medicines', 'Doctor Visit', 'Hospital'],
-    'Other Expense': ['Miscellaneous', 'Personal Care'],
-  };
-
-  final List<String> _accountTypes = [
-    'Cash',
-    'Bank Account',
-    'Credit Card',
-    'Mobile Wallet',
-    'Savings Account',
-  ];
-
-  Map<String, List<String>> get _categoryMap =>
-      widget.type == 'Income' ? _incomeCategoriesWithSub : _expenseCategoriesWithSub;
-
-  List<String> get _currentSubCategories {
-    if (_selectedCategory == null) return [];
-    return _categoryMap[_selectedCategory] ?? ['General'];
-  }
-
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      final category = _selectedCategory;
-      final subCategory = _selectedSubCategory;
-      final accountType = _selectedAccountType;
+      final categoryId = _selectedCategory?.id;
+      final categoryName = _selectedCategory?.name;
+      final subcategoryId = _selectedSubCategory?.id;
+      final subcategoryName = _selectedSubCategory?.name;
+      final accountType = _selectedAccountType?.apiValue;
       final amount = double.parse(_amountController.text.trim());
       final note = _noteController.text.trim();
 
       debugPrint("Type: ${widget.type}");
-      debugPrint("Category: $category");
-      debugPrint("SubCategory: $subCategory");
+      debugPrint("CategoryId: $categoryId, CategoryName: $categoryName");
+      debugPrint("SubcategoryId: $subcategoryId, SubcategoryName: $subcategoryName");
       debugPrint("AccountType: $accountType");
       debugPrint("Amount: $amount");
       debugPrint("Note: $note");
@@ -81,6 +53,10 @@ class _TransactionFormState extends State<TransactionForm> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryProvider = context.watch<CategoryProvider>();
+    final categories = categoryProvider.getCategoriesByType(widget.type);
+    final subcategories = _selectedCategory?.subcategories ?? [];
+
     final outlineInputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10.0),
       borderSide: const BorderSide(
@@ -96,29 +72,31 @@ class _TransactionFormState extends State<TransactionForm> {
           children: [
             /// Category Dropdown
             _buildInputLabelText("Category"),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<CategoryModel>(
               value: _selectedCategory,
               decoration: InputDecoration(
-                hintText: "Select Category",
+                hintText: categoryProvider.isLoading
+                    ? "Loading categories..."
+                    : "Select Category",
                 hintStyle: const TextStyle(color: Colors.grey),
                 border: outlineInputBorder,
                 enabledBorder: outlineInputBorder,
                 focusedBorder: outlineInputBorder,
               ),
-              items: _categoryMap.keys.map((String category) {
-                return DropdownMenuItem<String>(
+              items: categories.map((CategoryModel category) {
+                return DropdownMenuItem<CategoryModel>(
                   value: category,
-                  child: Text(category),
+                  child: Text(category.name),
                 );
               }).toList(),
-              onChanged: (value) {
+              onChanged: (CategoryModel? value) {
                 setState(() {
                   _selectedCategory = value;
                   _selectedSubCategory = null;
                 });
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null) {
                   return "Please select a category";
                 }
                 return null;
@@ -128,7 +106,7 @@ class _TransactionFormState extends State<TransactionForm> {
 
             /// Sub-Category Dropdown
             _buildInputLabelText("Sub-Category"),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<SubcategoryModel>(
               value: _selectedSubCategory,
               decoration: InputDecoration(
                 hintText: _selectedCategory == null
@@ -139,21 +117,21 @@ class _TransactionFormState extends State<TransactionForm> {
                 enabledBorder: outlineInputBorder,
                 focusedBorder: outlineInputBorder,
               ),
-              items: _currentSubCategories.map((String subCategory) {
-                return DropdownMenuItem<String>(
+              items: subcategories.map((SubcategoryModel subCategory) {
+                return DropdownMenuItem<SubcategoryModel>(
                   value: subCategory,
-                  child: Text(subCategory),
+                  child: Text(subCategory.name),
                 );
               }).toList(),
               onChanged: _selectedCategory == null
                   ? null
-                  : (value) {
+                  : (SubcategoryModel? value) {
                       setState(() {
                         _selectedSubCategory = value;
                       });
                     },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null) {
                   return "Please select a sub-category";
                 }
                 return null;
@@ -163,7 +141,7 @@ class _TransactionFormState extends State<TransactionForm> {
 
             /// Account Type Dropdown
             _buildInputLabelText("Account Type"),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<AccountType>(
               value: _selectedAccountType,
               decoration: InputDecoration(
                 hintText: "Select Account Type",
@@ -172,19 +150,19 @@ class _TransactionFormState extends State<TransactionForm> {
                 enabledBorder: outlineInputBorder,
                 focusedBorder: outlineInputBorder,
               ),
-              items: _accountTypes.map((String accountType) {
-                return DropdownMenuItem<String>(
-                  value: accountType,
-                  child: Text(accountType),
+              items: AccountType.values.map((AccountType type) {
+                return DropdownMenuItem<AccountType>(
+                  value: type,
+                  child: Text(type.displayName),
                 );
               }).toList(),
-              onChanged: (value) {
+              onChanged: (AccountType? value) {
                 setState(() {
                   _selectedAccountType = value;
                 });
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null) {
                   return "Please select an account type";
                 }
                 return null;
@@ -261,7 +239,11 @@ class _TransactionFormState extends State<TransactionForm> {
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Text(
         labelName,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black),
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
       ),
     );
   }

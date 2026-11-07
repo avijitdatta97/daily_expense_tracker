@@ -6,7 +6,9 @@ import 'package:dec/Views/MainScreenView.dart';
 import 'package:dec/core/network/api_client.dart';
 import 'package:dec/core/services/storage_service.dart';
 import 'package:dec/data/repositories/auth_repository.dart';
+import 'package:dec/data/repositories/category_repository.dart';
 import 'package:dec/providers/auth_provider.dart';
+import 'package:dec/providers/category_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -40,11 +42,21 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, AuthRepository>(
           update: (_, apiClient, __) => AuthRepository(apiClient),
         ),
-        // 4. Auth Provider (depends on AuthRepository and StorageService)
+        // 4. Category Repository (depends on ApiClient)
+        ProxyProvider<ApiClient, CategoryRepository>(
+          update: (_, apiClient, __) => CategoryRepository(apiClient),
+        ),
+        // 5. Auth Provider (depends on AuthRepository and StorageService)
         ChangeNotifierProvider<AuthProvider>(
           create: (context) => AuthProvider(
             context.read<AuthRepository>(),
             context.read<StorageService>(),
+          ),
+        ),
+        // 6. Category Provider (depends on CategoryRepository)
+        ChangeNotifierProvider<CategoryProvider>(
+          create: (context) => CategoryProvider(
+            context.read<CategoryRepository>(),
           ),
         ),
       ],
