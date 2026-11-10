@@ -1,7 +1,9 @@
 import 'package:dec/Views/HomeScreenView.dart';
 import 'package:dec/Views/SettingScreenView.dart';
 import 'package:dec/Views/TransactionsScreenView.dart';
+import 'package:dec/providers/category_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'BottomNavbarScreens/ChatScreenView.dart';
 
@@ -16,6 +18,14 @@ class MainScreenView extends StatefulWidget {
 
 class _MainScreenViewState extends State<MainScreenView> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CategoryProvider>().fetchAllCategories();
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {

@@ -1,7 +1,8 @@
-import 'package:dec/utilities/helper_function.dart';
+import 'package:dec/models/TransactionModel.dart';
+import 'package:dec/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../utilities/helper_list.dart';
+import 'package:provider/provider.dart';
 import 'HelperViews/TransactionForm.dart';
 
 class TransactionsScreenView extends StatefulWidget {
@@ -13,9 +14,37 @@ class TransactionsScreenView extends StatefulWidget {
 
 class _TransactionsScreenViewState extends State<TransactionsScreenView> {
   String selectedCategory = "All";
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final now = DateTime.now();
+      context.read<TransactionProvider>().fetchTransactions(
+            month: now.month,
+            year: now.year,
+          );
+    });
+
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final transactionProvider = context.watch<TransactionProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -23,7 +52,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: const [
                 Text("Transactions"),
                 Text(
                   "Manage financial records",
@@ -42,7 +71,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(Icons.add),
                   Text(
@@ -55,7 +84,6 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
           ],
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0),
         child: Column(
@@ -74,39 +102,34 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
               ),
             ),
 
-            /// Search Button
+            /// Search Input Field
             Padding(
               padding: const EdgeInsets.only(top: 10.0, bottom: 10),
-              child: Form(
-                child: TextFormField(
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.search, color: Colors.grey),
-                    hintText: "Search Transactions...",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    // Standard Border (Fallback)
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0), // Radius 10
-                      borderSide: BorderSide(
-                        color: Color(0xFFD8DADC),
-                        width: 1,
-                      ),
+              child: TextFormField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  hintText: "Search Transactions...",
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFD8DADC),
+                      width: 1,
                     ),
-                    // Enabled Border (State when field is not focused)
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0), // Radius 10
-                      borderSide: BorderSide(
-                        color: Color(0xFFD8DADC),
-                        width: 1,
-                      ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFD8DADC),
+                      width: 1,
                     ),
-                    // Focused Border (State when typing - keeping radius consistent)
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0), // Radius 10
-                      borderSide: BorderSide(
-                        color: Color(0xFFD8DADC),
-                        width: 1,
-                      ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFD8DADC),
+                      width: 1,
                     ),
                   ),
                 ),
@@ -115,37 +138,76 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
 
             /// List View
             Expanded(
-              child: Builder(
-                builder: (context) {
-                  final filteredTransactions = selectedCategory == "All"
-                      ? transactionDataList
-                      : transactionDataList.where((transaction) {
-                          return transaction.transactionType.toLowerCase() ==
-                              selectedCategory.toLowerCase();
-                        }).toList();
+              child: transactionProvider.isFetchingTransactions
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.green),
+                    )
+                  : Builder(
+                      builder: (context) {
+                        var list = transactionProvider.transactions;
 
-                  return ListView.builder(
-                    itemCount: filteredTransactions.length,
-                    itemBuilder: (context, index) {
-                      final transaction = filteredTransactions[index];
+                        // Filter by Category
+                        if (selectedCategory != "All") {
+                          list = list.where((t) {
+                            return t.type.toLowerCase() ==
+                                selectedCategory.toLowerCase();
+                          }).toList();
+                        }
 
-                      final String transactionDate =
-                          "${transaction.transactionDate.day}/"
-                          "${transaction.transactionDate.month}/"
-                          "${transaction.transactionDate.year}";
+                        // Filter by Search Query
+                        if (_searchQuery.isNotEmpty) {
+                          list = list.where((t) {
+                            final name = t.transactionName.toLowerCase();
+                            final cat = t.categoryName.toLowerCase();
+                            final subcat = t.subcategoryName.toLowerCase();
+                            final note = (t.note ?? '').toLowerCase();
+                            return name.contains(_searchQuery) ||
+                                cat.contains(_searchQuery) ||
+                                subcat.contains(_searchQuery) ||
+                                note.contains(_searchQuery);
+                          }).toList();
+                        }
 
-                      final bool isIncome =
-                          transaction.transactionType.toLowerCase() == 'income';
+                        //check empty list
+                        if (list.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              "No transactions found",
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
+                            ),
+                          );
+                        }
 
-                      return _buildTransactionCard(
-                        transaction,
-                        transactionDate,
-                        isIncome,
-                      );
-                    },
-                  );
-                },
-              ),
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            final now = DateTime.now();
+                            await transactionProvider.fetchTransactions(
+                              month: now.month,
+                              year: now.year,
+                            );
+                          },
+                          child: ListView.builder(
+                            itemCount: list.length,
+                            itemBuilder: (context, index) {
+                              final transaction = list[index];
+                              final String transactionDate =
+                                  "${transaction.transactionDate.day}/"
+                                  "${transaction.transactionDate.month}/"
+                                  "${transaction.transactionDate.year}";
+
+                              final bool isIncome =
+                                  transaction.type.toLowerCase() == 'income';
+
+                              return _buildTransactionCard(
+                                transaction,
+                                transactionDate,
+                                isIncome,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -154,10 +216,10 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
   }
 
   Widget _buildTransactionCard(
-      dynamic transaction,
-      String transactionDate,
-      bool isIncome,
-      ) {
+    TransactionModel transaction,
+    String transactionDate,
+    bool isIncome,
+  ) {
     return Card(
       color: Colors.white,
       elevation: 0,
@@ -171,49 +233,37 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
       ),
       child: ListTile(
         title: Text(transaction.transactionName),
-        subtitle: Text(transactionDate),
-
+        subtitle: Text(
+          "$transactionDate${transaction.note != null && transaction.note!.isNotEmpty ? ' • ${transaction.note}' : ''}",
+        ),
         leading: CircleAvatar(
-          backgroundColor: isIncome
-              ? Colors.green.shade100
-              : Colors.red.shade100,
+          backgroundColor:
+              isIncome ? Colors.green.shade100 : Colors.red.shade100,
           child: isIncome
               ? const Icon(
-            Icons.call_received,
-            color: Colors.green,
-          )
+                  Icons.call_received,
+                  color: Colors.green,
+                )
               : const Icon(
-            Icons.call_made,
-            color: Colors.red,
-          ),
+                  Icons.call_made,
+                  color: Colors.red,
+                ),
         ),
-
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "${isIncome ? '+' : '-'}\$"
-                  "${transaction.transactionAmount.toStringAsFixed(2)}",
+              "${isIncome ? '+' : '-'}${transaction.amount.toStringAsFixed(2)}",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: isIncome ? Colors.green : Colors.red,
               ),
             ),
-
             const SizedBox(width: 14),
-
             IconButton(
               onPressed: () {
-                showAlertDialog(
-                  context,
-                  "Deleted",
-                  "Are you sure, want to delete transaction data?",
-                  "Cancel",
-                  "Delete",
-                  Colors.green,
-                  Colors.red,
-                );
+                _showDeleteConfirmationDialog(context, transaction);
               },
               icon: SvgPicture.asset(
                 "images/delete_icon.svg",
@@ -224,6 +274,52 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(
+      BuildContext context, TransactionModel transaction) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text("Delete Transaction"),
+          content: const Text(
+              "Are you sure you want to delete this transaction record?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final success = await context
+                    .read<TransactionProvider>()
+                    .deleteTransaction(transaction.id);
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? "Transaction deleted successfully"
+                            : "Failed to delete transaction",
+                      ),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -260,7 +356,7 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -271,9 +367,9 @@ class _TransactionsScreenViewState extends State<TransactionsScreenView> {
           child: DefaultTabController(
             length: 2,
             child: Container(
-              padding: EdgeInsets.all(16),
-              height: 450,
-              child: Column(
+              padding: const EdgeInsets.all(16),
+              height: MediaQuery.of(context).size.height * 0.85,
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   /// Title
