@@ -1,6 +1,7 @@
 import 'package:dec/models/account_type.dart';
 import 'package:dec/models/category_model.dart';
 import 'package:dec/providers/category_provider.dart';
+import 'package:dec/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,24 +24,51 @@ class _TransactionFormState extends State<TransactionForm> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      final categoryId = _selectedCategory?.id;
-      final categoryName = _selectedCategory?.name;
-      final subcategoryId = _selectedSubCategory?.id;
-      final subcategoryName = _selectedSubCategory?.name;
-      final accountType = _selectedAccountType?.apiValue;
-      final amount = double.parse(_amountController.text.trim());
-      final note = _noteController.text.trim();
+      final transactionProvider = context.read<TransactionProvider>();
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
 
-      debugPrint("Type: ${widget.type}");
-      debugPrint("CategoryId: $categoryId, CategoryName: $categoryName");
-      debugPrint("SubcategoryId: $subcategoryId, SubcategoryName: $subcategoryName");
-      debugPrint("AccountType: $accountType");
-      debugPrint("Amount: $amount");
-      debugPrint("Note: $note");
+      final now = DateTime.now();
+      final dateStr =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      final timeStr =
+          "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
 
-      Navigator.pop(context); // close bottom sheet
+      final success = await transactionProvider.createTransaction(
+        type: widget.type.toUpperCase(),
+        amount: double.parse(_amountController.text.trim()),
+        categoryId: _selectedCategory!.id,
+        subcategoryId: _selectedSubCategory!.id,
+        account: _selectedAccountType!.apiValue,
+        transactionDate: dateStr,
+        transactionTime: timeStr,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text("${widget.type} transaction saved successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        navigator.pop(); // close bottom sheet
+      } else {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              transactionProvider.errorMessage ?? 'Failed to save transaction',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -54,6 +82,8 @@ class _TransactionFormState extends State<TransactionForm> {
   @override
   Widget build(BuildContext context) {
     final categoryProvider = context.watch<CategoryProvider>();
+    final transactionProvider = context.watch<TransactionProvider>();
+
     final categories = categoryProvider.getCategoriesByType(widget.type);
     final subcategories = _selectedCategory?.subcategories ?? [];
 
@@ -214,7 +244,7 @@ class _TransactionFormState extends State<TransactionForm> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _submit,
+                    onPressed: transactionProvider.isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -223,7 +253,16 @@ class _TransactionFormState extends State<TransactionForm> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Text("Save ${widget.type}"),
+                    child: transactionProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text("Save ${widget.type}"),
                   ),
                 ),
               ],
