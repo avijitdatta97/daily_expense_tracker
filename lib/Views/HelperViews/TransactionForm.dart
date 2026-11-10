@@ -1,4 +1,9 @@
+import 'package:dec/models/account_type.dart';
+import 'package:dec/models/category_model.dart';
+import 'package:dec/providers/category_provider.dart';
+import 'package:dec/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class TransactionForm extends StatefulWidget {
   final String type;
@@ -12,63 +17,58 @@ class TransactionForm extends StatefulWidget {
 class _TransactionFormState extends State<TransactionForm> {
   final _formKey = GlobalKey<FormState>();
 
-  String? _selectedCategory;
-  String? _selectedSubCategory;
-  String? _selectedAccountType;
+  CategoryModel? _selectedCategory;
+  SubcategoryModel? _selectedSubCategory;
+  AccountType? _selectedAccountType;
 
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
-  final Map<String, List<String>> _incomeCategoriesWithSub = {
-    'Salary': ['Monthly Salary', 'Bonus', 'Overtime'],
-    'Business': ['Sales', 'Services', 'Profit'],
-    'Investment': ['Dividends', 'Interest', 'Stocks'],
-    'Freelance': ['Project', 'Consulting'],
-    'Other Income': ['Gift', 'Refund', 'Miscellaneous'],
-  };
-
-  final Map<String, List<String>> _expenseCategoriesWithSub = {
-    'Food & Dining': ['Groceries', 'Restaurants', 'Fast Food', 'Coffee'],
-    'Bills & Utilities': ['Electricity', 'Water', 'Internet', 'Rent'],
-    'Shopping': ['Clothing', 'Electronics', 'Home Items'],
-    'Transportation': ['Fuel', 'Public Transit', 'Taxi/Uber'],
-    'Entertainment': ['Movies', 'Games', 'Subscriptions'],
-    'Health & Medical': ['Medicines', 'Doctor Visit', 'Hospital'],
-    'Other Expense': ['Miscellaneous', 'Personal Care'],
-  };
-
-  final List<String> _accountTypes = [
-    'Cash',
-    'Bank Account',
-    'Credit Card',
-    'Mobile Wallet',
-    'Savings Account',
-  ];
-
-  Map<String, List<String>> get _categoryMap =>
-      widget.type == 'Income' ? _incomeCategoriesWithSub : _expenseCategoriesWithSub;
-
-  List<String> get _currentSubCategories {
-    if (_selectedCategory == null) return [];
-    return _categoryMap[_selectedCategory] ?? ['General'];
-  }
-
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      final category = _selectedCategory;
-      final subCategory = _selectedSubCategory;
-      final accountType = _selectedAccountType;
-      final amount = double.parse(_amountController.text.trim());
-      final note = _noteController.text.trim();
+      final transactionProvider = context.read<TransactionProvider>();
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      final navigator = Navigator.of(context);
 
-      debugPrint("Type: ${widget.type}");
-      debugPrint("Category: $category");
-      debugPrint("SubCategory: $subCategory");
-      debugPrint("AccountType: $accountType");
-      debugPrint("Amount: $amount");
-      debugPrint("Note: $note");
+      final now = DateTime.now();
+      final dateStr =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      final timeStr =
+          "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
 
-      Navigator.pop(context); // close bottom sheet
+      final success = await transactionProvider.createTransaction(
+        type: widget.type.toUpperCase(),
+        amount: double.parse(_amountController.text.trim()),
+        categoryId: _selectedCategory!.id,
+        subcategoryId: _selectedSubCategory!.id,
+        account: _selectedAccountType!.apiValue,
+        transactionDate: dateStr,
+        transactionTime: timeStr,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text("${widget.type} transaction saved successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+        navigator.pop(); // close bottom sheet
+      } else {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              transactionProvider.errorMessage ?? 'Failed to save transaction',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -81,6 +81,12 @@ class _TransactionFormState extends State<TransactionForm> {
 
   @override
   Widget build(BuildContext context) {
+    final categoryProvider = context.watch<CategoryProvider>();
+    final transactionProvider = context.watch<TransactionProvider>();
+
+    final categories = categoryProvider.getCategoriesByType(widget.type);
+    final subcategories = _selectedCategory?.subcategories ?? [];
+
     final outlineInputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(10.0),
       borderSide: const BorderSide(
@@ -96,29 +102,31 @@ class _TransactionFormState extends State<TransactionForm> {
           children: [
             /// Category Dropdown
             _buildInputLabelText("Category"),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<CategoryModel>(
               value: _selectedCategory,
               decoration: InputDecoration(
-                hintText: "Select Category",
+                hintText: categoryProvider.isLoading
+                    ? "Loading categories..."
+                    : "Select Category",
                 hintStyle: const TextStyle(color: Colors.grey),
                 border: outlineInputBorder,
                 enabledBorder: outlineInputBorder,
                 focusedBorder: outlineInputBorder,
               ),
-              items: _categoryMap.keys.map((String category) {
-                return DropdownMenuItem<String>(
+              items: categories.map((CategoryModel category) {
+                return DropdownMenuItem<CategoryModel>(
                   value: category,
-                  child: Text(category),
+                  child: Text(category.name),
                 );
               }).toList(),
-              onChanged: (value) {
+              onChanged: (CategoryModel? value) {
                 setState(() {
                   _selectedCategory = value;
                   _selectedSubCategory = null;
                 });
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null) {
                   return "Please select a category";
                 }
                 return null;
@@ -128,7 +136,7 @@ class _TransactionFormState extends State<TransactionForm> {
 
             /// Sub-Category Dropdown
             _buildInputLabelText("Sub-Category"),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<SubcategoryModel>(
               value: _selectedSubCategory,
               decoration: InputDecoration(
                 hintText: _selectedCategory == null
@@ -139,21 +147,21 @@ class _TransactionFormState extends State<TransactionForm> {
                 enabledBorder: outlineInputBorder,
                 focusedBorder: outlineInputBorder,
               ),
-              items: _currentSubCategories.map((String subCategory) {
-                return DropdownMenuItem<String>(
+              items: subcategories.map((SubcategoryModel subCategory) {
+                return DropdownMenuItem<SubcategoryModel>(
                   value: subCategory,
-                  child: Text(subCategory),
+                  child: Text(subCategory.name),
                 );
               }).toList(),
               onChanged: _selectedCategory == null
                   ? null
-                  : (value) {
+                  : (SubcategoryModel? value) {
                       setState(() {
                         _selectedSubCategory = value;
                       });
                     },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null) {
                   return "Please select a sub-category";
                 }
                 return null;
@@ -163,7 +171,7 @@ class _TransactionFormState extends State<TransactionForm> {
 
             /// Account Type Dropdown
             _buildInputLabelText("Account Type"),
-            DropdownButtonFormField<String>(
+            DropdownButtonFormField<AccountType>(
               value: _selectedAccountType,
               decoration: InputDecoration(
                 hintText: "Select Account Type",
@@ -172,19 +180,19 @@ class _TransactionFormState extends State<TransactionForm> {
                 enabledBorder: outlineInputBorder,
                 focusedBorder: outlineInputBorder,
               ),
-              items: _accountTypes.map((String accountType) {
-                return DropdownMenuItem<String>(
-                  value: accountType,
-                  child: Text(accountType),
+              items: AccountType.values.map((AccountType type) {
+                return DropdownMenuItem<AccountType>(
+                  value: type,
+                  child: Text(type.displayName),
                 );
               }).toList(),
-              onChanged: (value) {
+              onChanged: (AccountType? value) {
                 setState(() {
                   _selectedAccountType = value;
                 });
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null) {
                   return "Please select an account type";
                 }
                 return null;
@@ -236,7 +244,7 @@ class _TransactionFormState extends State<TransactionForm> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: _submit,
+                    onPressed: transactionProvider.isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -245,7 +253,16 @@ class _TransactionFormState extends State<TransactionForm> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: Text("Save ${widget.type}"),
+                    child: transactionProvider.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text("Save ${widget.type}"),
                   ),
                 ),
               ],
@@ -261,7 +278,11 @@ class _TransactionFormState extends State<TransactionForm> {
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Text(
         labelName,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black),
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
       ),
     );
   }
